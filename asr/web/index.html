@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智能语音与大模型字幕控制台 - Cloud Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tcloud: {
+              brand: '#0052d9',
+              brandHover: '#003cab',
+              brandActive: '#002787',
+              brandLight: 'rgba(0, 82, 217, 0.12)',
+              bg: '#0a0e17',
+              header: '#0f1422',
+              card: '#121826',
+              cardBorder: '#1d273b',
+              inner: '#0d121f',
+              innerBorder: '#1b2334',
+              textPrimary: '#f1f5f9',
+              textSecondary: '#94a3b8',
+              textMuted: '#64748b',
+              success: '#00a870',
+              warning: '#ed7b2f',
+              error: '#e34d59',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 腾讯云企业级细滚动条 */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0a0e17; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+    .folder-toggle-btn.collapsed svg {
+      transform: rotate(-90deg);
+    }
+  </style>
+</head>
+<body class="bg-[#0a0e17] text-slate-200 min-h-screen font-sans antialiased flex flex-col selection:bg-[#0052d9] selection:text-white">
+
+  <!-- ── 顶部云控制台 Masthead 导航栏 (腾讯云控制台风格) ── -->
+  <header class="border-b border-[#1e2638] bg-[#0f1422] sticky top-0 z-50">
+    <div class="max-w-[1600px] mx-auto px-5 h-14 flex items-center justify-between">
+      
+      <!-- 控制台 Brand & 导航 Tabs -->
+      <div class="flex items-center space-x-6">
+        <div class="flex items-center space-x-3 cursor-pointer select-none" onclick="switchPage('add')">
+          <div class="w-8 h-8 rounded bg-[#0052d9] flex items-center justify-center font-bold text-white text-xs shadow-sm tracking-wider">
+            ASR
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-sm tracking-tight text-white">智能语音与大模型字幕控制台</span>
+              <span class="text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded">vLLM 生产级</span>
+            </div>
+            <span class="text-[11px] text-slate-400 font-mono">Qwen-ASR & LLM Subtitle Pipeline</span>
+          </div>
+        </div>
+
+        <!-- 视图切换 Tabs (TDesign 风格) -->
+        <nav class="flex items-center space-x-1 bg-[#0a0e17] p-1 rounded-md border border-[#1e2638]">
+          <button id="nav-add-btn" onclick="switchPage('add')" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded text-xs font-medium transition-all bg-[#0052d9] text-white shadow-sm">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            <span>创建转录任务</span>
+          </button>
+          <button id="nav-correct-btn" onclick="switchPage('correct')" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-[#151c2d]">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            <span>大模型智能纠错</span>
+          </button>
+          <button id="nav-tasks-btn" onclick="switchPage('tasks')" class="flex items-center space-x-1.5 px-3.5 py-1.5 rounded text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-[#151c2d] relative">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            <span>任务监控与看板</span>
+            <span id="nav-task-dot" class="hidden w-2 h-2 rounded-full bg-emerald-400 absolute top-1.5 right-1.5 animate-pulse"></span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- 右侧集群与硬件监控胶囊 (云厂商监控指标条) -->
+      <div class="flex items-center space-x-3">
+        <div id="system-status" class="flex items-center space-x-3 text-xs bg-[#0a0e17] border border-[#1e2638] px-3 py-1.5 rounded-md font-mono text-slate-300">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span class="text-slate-300 font-sans">ASR 引擎在线</span>
+          </span>
+          <span class="text-slate-700">|</span>
+          <span class="flex items-center gap-1">
+            <span class="text-slate-400">GPU利用率:</span>
+            <span id="gpu-util-tag" class="text-blue-400 font-semibold">0%</span>
+          </span>
+          <span class="text-slate-700">|</span>
+          <span class="flex items-center gap-1">
+            <span class="text-slate-400">显存:</span>
+            <span id="gpu-mem-tag" class="text-slate-200 font-semibold">-- / --</span>
+          </span>
+          <span class="text-slate-700">|</span>
+          <span class="flex items-center gap-1">
+            <span class="text-slate-400">大模型:</span>
+            <span id="llm-status-tag" class="text-slate-400 font-semibold font-mono">检测中...</span>
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- 全局通知 Toast 容器 -->
+  <div id="toast-container" class="fixed top-16 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- ── 控制台主工作区 ── -->
+  <main class="flex-1 max-w-[1600px] mx-auto w-full px-5 py-6">
+
+    <!-- ========================================================================= -->
+    <!-- 视图 1: 批量音视频转录 (服务器本地扫描 + 网页上传) -->
+    <!-- ========================================================================= -->
+    <div id="page-add" class="space-y-5">
+
+      <!-- 控制台顶部信息公告 (TDesign Banner) -->
+      <div class="bg-[#121826] border-l-4 border-[#0052d9] border border-[#1d273b] rounded-lg p-3.5 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-7 h-7 rounded bg-[#0052d9]/10 border border-[#0052d9]/20 flex items-center justify-center text-[#0052d9]">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <h2 class="text-xs font-semibold text-slate-100 tracking-wide">批量音视频转录与字幕生成</h2>
+              <span class="text-[10px] font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded">企业级调度</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">支持服务器本地 NAS / 固态盘音视频零拷贝秒级索引，亦支持客户端多文件并行上传并输出广播级 SRT 与 TXT 字幕。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 双面板栅格布局 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- 面板 1: 本地服务器路径扫描 -->
+        <div class="bg-[#121826] border border-[#1d273b] rounded-lg p-5 flex flex-col space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b border-[#1d273b] pb-3">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-1.5 h-4 bg-[#0052d9] rounded-full"></span>
+              <div>
+                <h3 class="text-sm font-semibold text-slate-100">服务器存储目录扫描</h3>
+                <p class="text-[11px] text-slate-400">直接索引服务器本地 NAS / 固态硬盘中的音视频资源</p>
+              </div>
+            </div>
+            <span class="text-[11px] bg-[#0a0e17] border border-[#1d273b] text-slate-300 px-2 py-0.5 rounded font-mono">本地零拷贝</span>
+          </div>
+
+          <!-- 目录输入与扫描 -->
+          <div class="space-y-2">
+            <label class="block text-xs font-medium text-slate-300">服务器绝对路径 (Path)</label>
+            <div class="flex space-x-2">
+              <input type="text" id="scan-path-input" value="/NAS/Kivvi/0考研视频课/强化/计算机网络强化" placeholder="/path/to/videos" class="flex-1 bg-[#0a0e17] border border-[#1e2638] rounded-md px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-[#0052d9] focus:ring-1 focus:ring-[#0052d9] transition-colors">
+              <button onclick="scanServerPath()" id="scan-btn" class="px-4 py-2 bg-[#0052d9] hover:bg-[#003cab] active:bg-[#002787] text-white rounded-md text-xs font-medium transition-all shadow-sm flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span id="scan-btn-text">扫描目录</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 高级策略设置 -->
+          <div class="grid grid-cols-2 gap-2.5 bg-[#0a0e17] p-3 rounded-md border border-[#1d273b] text-xs">
+            <label class="flex items-center space-x-2 cursor-pointer select-none text-slate-300">
+              <input type="checkbox" id="scan-recursive" checked class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+              <span>递归扫描子目录</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer select-none text-slate-300">
+              <input type="checkbox" id="scan-force" checked class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+              <span>强制覆盖已有字幕</span>
+            </label>
+            <label class="flex items-center space-x-2 cursor-pointer select-none text-slate-300">
+              <input type="checkbox" id="scan-srt-folder" class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+              <span>输出至原目录 srt/ 子文件夹</span>
+            </label>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">并行转录路数:</span>
+              <div class="flex items-center space-x-1.5">
+                <input type="number" id="server-concurrency" value="5" min="1" max="16" class="w-14 bg-[#121826] border border-[#1e2638] rounded px-2 py-1 text-xs text-blue-400 font-bold font-mono text-center focus:outline-none focus:border-[#0052d9]">
+                <span class="text-slate-500 text-[11px]">路并发</span>
+              </div>
+            </div>
+            <label class="flex items-center space-x-2.5 cursor-pointer select-none text-slate-300 col-span-2 bg-[#0052d9]/10 p-2 rounded border border-[#0052d9]/30">
+              <input type="checkbox" id="scan-enable-llm" checked class="w-4 h-4 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+              <div class="flex flex-col">
+                <span class="font-semibold text-blue-300" id="scan-enable-llm-text">启用大模型智能纠错 (Qwen3.5)</span>
+                <span class="text-[10px] text-slate-400">ASR 识别完成后自动执行全局领域画像与逐行锚定纠错，输出终版 SRT 与 TXT</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- 扫描结果列表区 -->
+          <div class="flex-1 flex flex-col space-y-2 min-h-[260px]">
+            <div class="flex items-center justify-between text-xs">
+              <div class="flex items-center space-x-2">
+                <span class="font-medium text-slate-300">匹配到的文件列表</span>
+                <span id="scan-stats-badge" class="bg-[#0a0e17] text-slate-400 px-2 py-0.5 rounded text-[11px] font-mono border border-[#1e2638]">未扫描</span>
+              </div>
+              <div id="scan-actions" class="hidden items-center space-x-2 font-mono">
+                <button onclick="toggleSelectAllServer(true)" class="text-blue-400 hover:text-blue-300 text-xs">全选</button>
+                <span class="text-slate-700">|</span>
+                <button onclick="toggleSelectAllServer(false)" class="text-slate-400 hover:text-slate-300 text-xs">清空选择</button>
+              </div>
+            </div>
+
+            <div id="server-files-container" class="flex-1 bg-[#0a0e17] rounded-md border border-[#1e2638] p-2.5 overflow-y-auto max-h-[320px] space-y-2 text-xs">
+              <div class="h-44 flex flex-col items-center justify-center text-slate-500 space-y-1">
+                <span>请输入有效的服务器目录路径并点击“扫描目录”</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 底部提交操作栏 -->
+          <div class="pt-3 border-t border-[#1d273b] flex items-center justify-between">
+            <div class="text-xs text-slate-400 font-mono">
+              已选: <span id="server-selected-count" class="text-blue-400 font-bold">0</span> 个文件 
+              (<span id="server-selected-dur" class="text-slate-300">0.0</span> 分钟)
+            </div>
+            <button onclick="submitServerBatchTask()" id="server-submit-btn" disabled class="px-4 py-2 bg-[#0052d9] disabled:bg-[#151c2d] disabled:text-slate-600 hover:bg-[#003cab] active:bg-[#002787] text-white rounded-md text-xs font-semibold transition-all shadow-sm flex items-center space-x-1.5">
+              <span>提交转录批处理任务</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 面板 2: 网页本地文件批量上传 -->
+        <div class="bg-[#121826] border border-[#1d273b] rounded-lg p-5 flex flex-col space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b border-[#1d273b] pb-3">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-1.5 h-4 bg-slate-500 rounded-full"></span>
+              <div>
+                <h3 class="text-sm font-semibold text-slate-100">本地音视频文件上传</h3>
+                <p class="text-[11px] text-slate-400">从客户端浏览器直接拖拽或选取文件分发至服务端</p>
+              </div>
+            </div>
+            <span class="text-[11px] bg-[#0a0e17] border border-[#1d273b] text-slate-300 px-2 py-0.5 rounded font-mono">跨网络上传</span>
+          </div>
+
+          <!-- 上传拖拽区 -->
+          <div id="drop-zone" onclick="document.getElementById('file-upload-input').click()" class="border border-dashed border-[#1e2638] hover:border-[#0052d9] bg-[#0a0e17] hover:bg-[#0052d9]/5 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors">
+            <input type="file" id="file-upload-input" multiple accept="video/*,audio/*,.mkv,.mp4,.mp3,.wav,.flv,.avi,.mov,.m4a,.webm" class="hidden" onchange="handleFileUploadSelection(this.files)">
+            <div class="w-10 h-10 rounded-md bg-[#0052d9]/10 border border-[#0052d9]/20 text-[#0052d9] flex items-center justify-center text-lg mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            </div>
+            <p class="text-xs font-medium text-slate-200">点击选择或将音视频文件拖拽至此处</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">支持常见主流媒体格式 (MP4, MKV, AVI, MOV, MP3, WAV 等)</p>
+          </div>
+
+          <!-- 上传参数设置 -->
+          <div class="grid grid-cols-2 gap-2.5 bg-[#0a0e17] p-3 rounded-md border border-[#1d273b] text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">语种模型:</span>
+              <select id="upload-lang" class="bg-[#121826] border border-[#1e2638] rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-[#0052d9]">
+                <option value="">自动识别 (Auto)</option>
+                <option value="zh">中文 (Chinese)</option>
+                <option value="en">英文 (English)</option>
+                <option value="ja">日文 (Japanese)</option>
+                <option value="ko">韩文 (Korean)</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">并行处理路数:</span>
+              <div class="flex items-center space-x-1.5">
+                <input type="number" id="upload-concurrency" value="5" min="1" max="16" class="w-14 bg-[#121826] border border-[#1e2638] rounded px-2 py-1 text-xs text-blue-400 font-bold font-mono text-center focus:outline-none focus:border-[#0052d9]">
+                <span class="text-slate-500 text-[11px]">路并发</span>
+              </div>
+            </div>
+            <label class="flex items-center space-x-2.5 cursor-pointer select-none text-slate-300 col-span-2 bg-[#0052d9]/10 p-2 rounded border border-[#0052d9]/30">
+              <input type="checkbox" id="upload-enable-llm" checked class="w-4 h-4 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+              <div class="flex flex-col">
+                <span class="font-semibold text-blue-300" id="upload-enable-llm-text">启用大模型智能纠错 (Qwen3.5)</span>
+                <span class="text-[10px] text-slate-400">识别完成后自动由大模型纠错并输出广播级排版字幕</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- 待上传列表 -->
+          <div class="flex-1 flex flex-col space-y-2 min-h-[200px]">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-medium text-slate-300">待上传队列</span>
+              <span id="upload-count-badge" class="bg-[#0a0e17] text-slate-400 px-2 py-0.5 rounded text-[11px] font-mono border border-[#1e2638]">0 个文件</span>
+            </div>
+            <div id="upload-files-preview" class="flex-1 bg-[#0a0e17] rounded-md border border-[#1e2638] p-2.5 overflow-y-auto max-h-[260px] space-y-1.5 text-xs">
+              <div class="h-28 flex flex-col items-center justify-center text-slate-600">
+                <span>暂无待上传文件</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 底部上传提交操作栏 -->
+          <div class="pt-3 border-t border-[#1d273b] flex items-center justify-between">
+            <div class="text-xs text-slate-400 font-mono">
+              总计体积: <span id="upload-total-size" class="text-blue-400">0 MB</span>
+            </div>
+            <button onclick="submitUploadBatchTask()" id="upload-submit-btn" disabled class="px-4 py-2 bg-[#0052d9] disabled:bg-[#151c2d] disabled:text-slate-600 hover:bg-[#003cab] active:bg-[#002787] text-white rounded-md text-xs font-semibold transition-all shadow-sm flex items-center space-x-1.5">
+              <span id="upload-submit-text">上传并开始处理</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- 视图 2: JSON 单独大模型智能纠错 (原地覆盖原字幕 / 上传下载) -->
+    <!-- ========================================================================= -->
+    <div id="page-correct" class="hidden space-y-5">
+
+      <!-- 控制台顶部信息公告 (TDesign Banner) -->
+      <div class="bg-[#121826] border-l-4 border-[#0052d9] border border-[#1d273b] rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 rounded bg-[#0052d9]/10 border border-[#0052d9]/20 flex items-center justify-center text-[#0052d9] shrink-0 mt-0.5">
+            <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2.5">
+              <h2 class="text-xs font-bold text-slate-100 uppercase tracking-wider">大模型领域自适应字幕智能纠错</h2>
+              <span id="llm-model-banner-badge" class="px-2 py-0.5 text-xs rounded bg-[#0052d9]/20 text-blue-300 border border-[#0052d9]/40 font-mono">Qwen3.5-9B</span>
+              <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded">广播级对齐</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Stage 1 自动全文多点采样提炼学科领域专业术语与易混口误同音字；Stage 2 逐行严格声学锚定纠错，100% 保持原始时间戳零漂移。</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 text-xs shrink-0 font-mono">
+          <span class="text-slate-400">单文件纠错并发:</span>
+          <span class="px-2 py-0.5 rounded bg-[#0a0e17] border border-[#1e2638] text-blue-400 font-bold">20 路并发</span>
+        </div>
+      </div>
+
+      <!-- 双面板栅格布局 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- 面板 1: 服务器本地 JSON 纠错并覆盖 -->
+        <div class="bg-[#121826] border border-[#1d273b] rounded-lg p-5 flex flex-col space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b border-[#1d273b] pb-3">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-1.5 h-4 bg-[#0052d9] rounded-full"></span>
+              <div>
+                <h3 class="text-sm font-semibold text-slate-100">服务器已有 JSON 文件纠错</h3>
+                <p class="text-[11px] text-slate-400">直接对服务器存储上的 ASR JSON 执行纠错并覆盖原字幕</p>
+              </div>
+            </div>
+            <span class="text-[11px] bg-[#0a0e17] border border-[#1d273b] text-emerald-400 px-2 py-0.5 rounded font-mono">原地覆盖原SRT</span>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-medium text-slate-300">ASR JSON 所在服务器目录</label>
+            <div class="flex items-center space-x-2">
+              <input type="text" id="correct-scan-path-input" value="/NAS/Kivvi/0考研视频课/强化" placeholder="/path/to/json/folder" class="flex-1 bg-[#0a0e17] border border-[#1e2638] rounded-md px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-[#0052d9] focus:ring-1 focus:ring-[#0052d9] transition-colors">
+              <button onclick="scanJsonServerPath()" id="correct-scan-btn" class="px-4 py-2 bg-[#0052d9] hover:bg-[#003cab] active:bg-[#002787] text-white rounded-md text-xs font-medium transition-all flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span id="correct-scan-btn-text">扫描目录</span>
+              </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-slate-400 pt-0.5">
+              <label class="flex items-center space-x-1.5 cursor-pointer">
+                <input type="checkbox" id="correct-scan-recursive" checked class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+                <span>递归子目录</span>
+              </label>
+              <div class="flex items-center space-x-2">
+                <span>批大小</span>
+                <input type="number" id="correct-batch-size" value="25" min="5" max="60" class="w-14 bg-[#0a0e17] border border-[#1e2638] rounded px-2 py-0.5 text-xs text-blue-400 font-bold font-mono text-center focus:outline-none focus:border-[#0052d9]">
+                <span>并发路数</span>
+                <input type="number" id="correct-concurrency" value="20" min="1" max="20" class="w-14 bg-[#0a0e17] border border-[#1e2638] rounded px-2 py-0.5 text-xs text-blue-400 font-bold font-mono text-center focus:outline-none focus:border-[#0052d9]">
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-medium text-slate-300">JSON 文件清单</span>
+              <span id="correct-scan-stats-badge" class="bg-[#0a0e17] text-slate-400 px-2 py-0.5 rounded text-[11px] font-mono border border-[#1e2638]">未扫描</span>
+            </div>
+            <div id="correct-scan-actions" class="hidden items-center space-x-2">
+              <label class="flex items-center space-x-1.5 text-[11px] text-slate-400 cursor-pointer">
+                <input type="checkbox" id="correct-select-all" checked onchange="toggleSelectAllJson(this.checked)" class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+                <span>全选</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="correct-json-container" class="bg-[#0a0e17] rounded-md border border-[#1e2638] p-2.5 overflow-y-auto max-h-[300px] space-y-2 text-xs">
+            <div class="h-40 flex items-center justify-center text-slate-500 text-center px-6">输入服务器目录后点击「扫描目录」，即可勾选一个或多个已有 JSON 批量纠错</div>
+          </div>
+
+          <div class="bg-[#0a0e17] p-3 rounded-md border border-[#1e2638] text-xs space-y-1.5 text-slate-400">
+            <div class="flex items-center space-x-2 text-slate-200">
+              <svg class="w-4 h-4 text-[#0052d9]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span class="font-medium text-slate-100">核心架构特性</span>
+            </div>
+            <p class="leading-relaxed">1. <b>自主画像</b>：自动识别学科领域，提炼专有名词库与易混同音发音规则；</p>
+            <p class="leading-relaxed">2. <b>时间轴严丝合缝</b>：严格按照 [ID] 编号逐行纠错，100% 保持原有时间戳不变；</p>
+            <p class="leading-relaxed">3. <b>一键同步落盘</b>：处理完成后自动覆盖同目录下的 <code class="text-blue-400 font-mono">.srt</code>、<code class="text-blue-400 font-mono">.txt</code> 以及 <code class="text-blue-400 font-mono">.json</code> 文件。</p>
+          </div>
+
+          <div class="pt-3 border-t border-[#1d273b] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div class="text-[11px] text-slate-400 font-mono">
+              已选: <span id="correct-selected-count" class="text-blue-400 font-bold">0</span> 个 JSON 
+              (<span id="correct-selected-segments" class="text-slate-300">0</span> 条字幕)
+            </div>
+            <button onclick="submitJsonCorrectionTask()" id="correct-submit-btn" disabled class="px-5 py-2 bg-[#0052d9] disabled:bg-[#151c2d] disabled:text-slate-600 hover:bg-[#003cab] active:bg-[#002787] text-white rounded-md text-xs font-semibold transition-all shadow-sm flex items-center space-x-2">
+              <span id="correct-submit-btn-text">创建批量纠错任务</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 面板 2: 上传 JSON 文件纠错并下载 -->
+        <div class="bg-[#121826] border border-[#1d273b] rounded-lg p-5 flex flex-col space-y-4 shadow-sm">
+          <div class="flex items-center justify-between border-b border-[#1d273b] pb-3">
+            <div class="flex items-center space-x-2.5">
+              <span class="w-1.5 h-4 bg-slate-500 rounded-full"></span>
+              <div>
+                <h3 class="text-sm font-semibold text-slate-100">上传 JSON 文件纠错</h3>
+                <p class="text-[11px] text-slate-400">从客户端上传任意已识别的 JSON，纠错后直接下载 SRT/TXT</p>
+              </div>
+            </div>
+            <span class="text-[11px] bg-[#0a0e17] border border-[#1d273b] text-slate-300 px-2 py-0.5 rounded font-mono">独立下载</span>
+          </div>
+
+          <div id="correct-drop-zone" onclick="document.getElementById('correct-file-input').click()" class="border border-dashed border-[#1e2638] hover:border-[#0052d9] bg-[#0a0e17] hover:bg-[#0052d9]/5 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer transition-colors">
+            <input type="file" id="correct-file-input" accept=".json" class="hidden" onchange="handleCorrectFileSelect(this.files)">
+            <div class="w-10 h-10 rounded-md bg-[#0052d9]/10 border border-[#0052d9]/20 text-[#0052d9] flex items-center justify-center text-lg mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <p id="correct-file-label" class="text-xs font-medium text-slate-200">点击选择或拖拽 .json 文件至此处</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">支持包含 full_text / segments / word_timestamps 的 ASR 结果文件</p>
+          </div>
+
+          <div class="bg-[#0a0e17] p-3 rounded-md border border-[#1e2638] text-xs text-slate-400 flex items-center justify-between">
+            <span>已选待纠错文件:</span>
+            <span id="correct-selected-name" class="font-mono text-blue-400 font-medium truncate max-w-xs">尚未选择</span>
+          </div>
+
+          <div class="pt-3 border-t border-[#1d273b] flex items-center justify-end">
+            <button onclick="submitUploadJsonCorrection()" id="correct-upload-btn" disabled class="px-5 py-2 bg-[#0052d9] disabled:bg-[#151c2d] disabled:text-slate-600 hover:bg-[#003cab] active:bg-[#002787] text-white rounded-md text-xs font-semibold transition-all shadow-sm flex items-center space-x-2">
+              <span id="correct-upload-btn-text">上传并开始智能纠错</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 纠错执行状态与元数据看板 -->
+      <div id="correct-result-container" class="hidden bg-[#121826] border border-[#1d273b] rounded-lg p-5 space-y-4 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1d273b] pb-3">
+          <div class="flex items-center space-x-3 truncate">
+            <span class="text-xs text-slate-400 font-medium">领域画像:</span>
+            <span id="correct-domain-badge" class="px-2.5 py-0.5 rounded text-xs font-bold bg-[#0052d9]/20 text-blue-300 border border-[#0052d9]/40 shrink-0">--</span>
+            <span id="correct-topic-text" class="text-xs text-slate-300 font-medium truncate">--</span>
+          </div>
+          <div id="correct-download-links" class="flex items-center space-x-2 text-xs shrink-0 font-mono"></div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 bg-[#0a0e17] p-3 rounded-md border border-[#1e2638] text-xs font-mono">
+          <div><span class="text-slate-500">纠错字幕行数: </span><b id="correct-count-val" class="text-blue-400">0</b></div>
+          <div><span class="text-slate-500">领域专有名词: </span><b id="correct-jargon-val" class="text-emerald-400">0</b> 个</div>
+          <div><span class="text-slate-500">文件保存状态: </span><b id="correct-saved-status" class="text-emerald-400 font-semibold">已覆盖</b></div>
+        </div>
+
+        <div id="correct-preview-box" class="space-y-2">
+          <span class="text-xs text-slate-400 font-medium">纠错结果即时预览：</span>
+          <div id="correct-preview-content" class="bg-[#0a0e17] border border-[#1e2638] rounded-md p-3 text-xs font-mono text-slate-300 space-y-1.5 max-h-56 overflow-y-auto"></div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- 视图 3: 任务看板与监控 (腾讯云控制台设计) -->
+    <!-- ========================================================================= -->
+    <div id="page-tasks" class="hidden space-y-5">
+
+      <!-- 当前任务监控主面板 -->
+      <div id="active-task-container" class="bg-[#121826] border border-[#1d273b] rounded-lg p-5 space-y-5 shadow-sm">
+        
+        <!-- 任务概览指标面板 (KPI Metrics Bar) -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#1d273b] pb-4">
+          <div class="space-y-1.5">
+            <div class="flex items-center space-x-3">
+              <span class="text-xs text-slate-400 font-medium">任务实例:</span>
+              <span id="active-task-id" class="font-mono text-sm text-slate-100 bg-[#0a0e17] border border-[#1e2638] px-2.5 py-0.5 rounded font-bold">--</span>
+              <span id="active-task-status-badge" class="px-2 py-0.5 rounded text-xs font-semibold bg-[#0a0e17] text-slate-400 border border-[#1e2638]">准备中</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-400 font-mono">
+              <span>文件总数: <b id="active-task-total-files" class="text-slate-200">0</b></span>
+              <span>已完成: <b id="active-task-completed-files" class="text-emerald-400">0</b></span>
+              <span>并行调度: <b id="active-task-concurrency" class="text-blue-400">5 路并发</b></span>
+              <span>执行耗时: <b id="active-task-time" class="text-slate-200">00:00</b></span>
+            </div>
+          </div>
+
+          <!-- 控制操作组 -->
+          <div class="flex items-center space-x-2.5">
+            <button onclick="cancelCurrentTask()" id="cancel-task-btn" class="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-800 text-rose-300 rounded-md text-xs font-semibold transition-colors flex items-center space-x-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <span>强制终止任务</span>
+            </button>
+            <a id="download-all-btn" href="#" target="_blank" class="px-3.5 py-1.5 bg-[#0052d9] hover:bg-[#003cab] text-white rounded-md text-xs font-semibold transition-colors flex items-center space-x-1.5 opacity-40 pointer-events-none">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>打包下载全部字幕 (.tar.gz)</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- 任务分项实时进度表格卡片 -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+            <span id="file-progress-title" class="font-medium text-slate-300">各视频文件处理进度明细</span>
+            <span id="file-progress-subtitle" class="text-[11px] text-slate-500 font-mono">多路独立抽取与转录 · 工业级平滑断句</span>
+          </div>
+
+          <div id="file-progress-list" class="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
+            <div class="py-12 text-center text-slate-500 text-xs">
+              暂无执行中的任务实例。请在“创建转录任务”或“大模型智能纠错”页面提交。
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 历史任务与存储管理表格 (Data Table) -->
+      <div class="bg-[#121826] border border-[#1d273b] rounded-lg p-5 space-y-4 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#1d273b] pb-3">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-1.5 h-4 bg-[#0052d9] rounded-full"></span>
+            <div>
+              <h3 class="text-sm font-semibold text-slate-100">历史任务记录与存储管理</h3>
+              <p class="text-[11px] text-slate-400">检索以往处理任务，下载归档字幕或释放磁盘缓存空间</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="refreshHistoryList()" class="px-3 py-1.5 bg-[#0a0e17] hover:bg-[#182032] text-slate-300 border border-[#1e2638] rounded-md text-xs font-medium transition-colors flex items-center space-x-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              <span>刷新列表</span>
+            </button>
+            <button onclick="clearAllHistory()" class="px-3 py-1.5 bg-rose-950/50 hover:bg-rose-900/70 border border-rose-800/70 text-rose-300 rounded-md text-xs font-semibold transition-colors flex items-center space-x-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              <span>清理历史与临时缓存</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300 font-sans">
+            <thead class="text-[11px] text-slate-400 uppercase bg-[#0a0e17] border-y border-[#1e2638] font-mono">
+              <tr>
+                <th class="px-4 py-2.5">任务 ID</th>
+                <th class="px-4 py-2.5">任务类型</th>
+                <th class="px-4 py-2.5">状态</th>
+                <th class="px-4 py-2.5">文件数 / 总时长</th>
+                <th class="px-4 py-2.5">创建时间</th>
+                <th class="px-4 py-2.5 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body" class="divide-y divide-[#1e2638]">
+              <tr>
+                <td colspan="6" class="px-4 py-6 text-center text-slate-500 font-mono">正在读取历史任务列表...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 控制台页脚 -->
+  <footer class="border-t border-[#1e2638] bg-[#0f1422] py-3 text-center text-slate-500 text-xs mt-auto font-mono">
+    Qwen-ASR & LLM Subtitle Studio &copy; 2026
+  </footer>
+
+  <!-- ── 前端业务交互脚本 ── -->
+  <script>
+    let activeTaskId = null;
+    let sseEventSource = null;
+    let timerInterval = null;
+    let startTime = null;
+
+    let scannedFiles = [];
+    let serverFoldersData = [];
+    let selectedServerPaths = new Set();
+
+    let uploadQueue = [];
+    let activeTaskType = 'server_batch';
+
+    let scannedJsonFiles = [];
+    let jsonFoldersData = [];
+    const selectedJsonPaths = new Set();
+    let selectedCorrectFile = null;
+
+    let currentLlmModelName = '';
+
+    function escapeHtml(text) {
+      return String(text == null ? '' : text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // 页面视图切换
+    function switchPage(pageId) {
+      const addPage = document.getElementById('page-add');
+      const correctPage = document.getElementById('page-correct');
+      const tasksPage = document.getElementById('page-tasks');
+      const addBtn = document.getElementById('nav-add-btn');
+      const correctBtn = document.getElementById('nav-correct-btn');
+      const tasksBtn = document.getElementById('nav-tasks-btn');
+
+      const activeBtnClass = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded text-xs font-medium transition-all bg-[#0052d9] text-white shadow-sm";
+      const inactiveBtnClass = "flex items-center space-x-1.5 px-3.5 py-1.5 rounded text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-[#151c2d]";
+
+      addPage.classList.add('hidden');
+      correctPage.classList.add('hidden');
+      tasksPage.classList.add('hidden');
+      addBtn.className = inactiveBtnClass;
+      correctBtn.className = inactiveBtnClass;
+      tasksBtn.className = inactiveBtnClass + " relative";
+
+      if (pageId === 'add') {
+        addPage.classList.remove('hidden');
+        addBtn.className = activeBtnClass;
+      } else if (pageId === 'correct') {
+        correctPage.classList.remove('hidden');
+        correctBtn.className = activeBtnClass;
+      } else {
+        tasksPage.classList.remove('hidden');
+        tasksBtn.className = activeBtnClass + " relative";
+        refreshHistoryList();
+      }
+    }
+
+    // 标准云控制台风格通知 Toast (企业级配色与图标)
+    function showToast(msg, type = 'info') {
+      const c = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const styles = {
+        success: 'bg-[#121826] border-[#00a870] text-[#00a870]',
+        error: 'bg-[#121826] border-[#e34d59] text-[#e34d59]',
+        info: 'bg-[#121826] border-[#0052d9] text-[#699cf5]'
+      };
+      toast.className = `px-4 py-2.5 rounded-md border text-xs shadow-lg transition-all duration-200 pointer-events-auto flex items-center space-x-2 font-mono ${styles[type] || styles.info}`;
+      toast.innerHTML = `<span class="font-bold">●</span><span class="font-sans text-slate-200">${escapeHtml(msg)}</span>`;
+      c.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
+    }
+
+    // ------------------------------------------------------------------
+    // 1. 本地目录扫描 (音视频文件)
+    // ------------------------------------------------------------------
+    async function scanServerPath() {
+      const pathInput = document.getElementById('scan-path-input');
+      const path = pathInput.value.trim().replace(/^["']|["']$/g, '');
+      if (!path) {
+        showToast('请输入有效的服务器目录绝对路径', 'error');
+        return;
+      }
+      const recursive = document.getElementById('scan-recursive').checked;
+      const btn = document.getElementById('scan-btn');
+      const btnText = document.getElementById('scan-btn-text');
+      const container = document.getElementById('server-files-container');
+      const statsBadge = document.getElementById('scan-stats-badge');
+
+      btn.disabled = true;
+      btnText.textContent = '扫描中...';
+      container.innerHTML = `<div class="h-44 flex items-center justify-center text-slate-400 space-x-2 font-mono text-xs"><span>正在索引目录并解析音视频元数据...</span></div>`;
+
+      try {
+        const res = await fetch('/api/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path, recursive })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || '扫描失败');
+        }
+        const data = await res.json();
+        scannedFiles = data.files || [];
+        serverFoldersData = data.folders || [];
+        selectedServerPaths.clear();
+
+        scannedFiles.forEach(f => selectedServerPaths.add(f.path));
+        statsBadge.textContent = `${scannedFiles.length} 个视频 (${data.total_duration_min} 分钟)`;
+        document.getElementById('scan-actions').classList.remove('hidden');
+
+        renderServerFilesList(serverFoldersData);
+        updateServerSelectionSummary();
+        showToast(`已成功索引 ${scannedFiles.length} 个音视频文件`, 'success');
+      } catch (e) {
+        container.innerHTML = `<div class="h-44 flex flex-col items-center justify-center text-red-400 space-y-1 text-xs font-mono"><span>[扫描错误] ${escapeHtml(e.message)}</span></div>`;
+        statsBadge.textContent = '扫描异常';
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = '扫描目录';
+      }
+    }
+
+    function renderServerFilesList(folders) {
+      const container = document.getElementById('server-files-container');
+      if (!folders || folders.length === 0) {
+        container.innerHTML = `<div class="h-44 flex items-center justify-center text-slate-500 text-xs">未匹配到支持的音视频文件</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      folders.forEach((group, groupIdx) => {
+        const folderCard = document.createElement('div');
+        folderCard.className = 'bg-[#121826] border border-[#1e2638] rounded-md p-2.5 space-y-2';
+
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between text-xs pb-2 border-b border-[#1e2638]';
+        header.innerHTML = `
+          <div class="flex items-center space-x-2 truncate">
+            <button type="button" class="folder-toggle-btn text-slate-400 hover:text-slate-200 transition-transform p-0.5" onclick="toggleServerFolderCollapse(${groupIdx})">
+              <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <input type="checkbox" id="server-folder-cb-${groupIdx}" onchange="toggleServerFolderCheckbox(${groupIdx}, this.checked)" class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+            <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span class="font-semibold text-slate-200 truncate" title="${escapeHtml(group.folder_path)}">${escapeHtml(group.folder_name)}</span>
+            <span class="text-slate-400 font-mono text-[11px]">(${group.count} 个视频 · ${(group.duration_sec / 60).toFixed(1)} 分)</span>
+          </div>
+          <div class="flex items-center space-x-2 text-[11px] font-mono shrink-0">
+            <button type="button" class="text-blue-400 hover:text-blue-300" onclick="toggleServerFolderSelectAll(${groupIdx}, true)">全选</button>
+            <span class="text-slate-700">|</span>
+            <button type="button" class="text-slate-400 hover:text-slate-300" onclick="toggleServerFolderSelectAll(${groupIdx}, false)">清空</button>
+          </div>
+        `;
+        folderCard.appendChild(header);
+
+        const filesList = document.createElement('div');
+        filesList.id = `server-folder-files-${groupIdx}`;
+        filesList.className = 'space-y-1 pt-1';
+        group.files.forEach(f => {
+          const isChecked = selectedServerPaths.has(f.path);
+          const item = document.createElement('label');
+          item.className = 'flex items-center justify-between p-1.5 rounded hover:bg-[#1a2336] cursor-pointer select-none transition-colors';
+          item.innerHTML = `
+            <div class="flex items-center space-x-2 truncate pr-2">
+              <input type="checkbox" data-path="${escapeHtml(f.path)}" data-group="${groupIdx}" ${isChecked ? 'checked' : ''} onchange="onServerFileCheck(this, ${groupIdx})" class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+              <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span class="text-slate-300 truncate font-mono text-xs" title="${escapeHtml(f.path)}">${escapeHtml(f.name)}</span>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0 text-[11px] text-slate-400 font-mono">
+              ${f.has_srt ? '<span class="text-emerald-400 font-medium px-1 bg-emerald-500/10 border border-emerald-500/20 rounded">已有SRT</span>' : ''}
+              <span>${f.duration > 0 ? (f.duration / 60).toFixed(1) + '分' : '未知'}</span>
+              <span>${f.size_mb}M</span>
+            </div>
+          `;
+          filesList.appendChild(item);
+        });
+
+        folderCard.appendChild(filesList);
+        container.appendChild(folderCard);
+        syncServerFolderCheckboxState(groupIdx);
+      });
+    }
+
+    function toggleServerFolderCollapse(groupIdx) {
+      const list = document.getElementById(`server-folder-files-${groupIdx}`);
+      if (!list) return;
+      list.classList.toggle('hidden');
+      const btn = list.previousElementSibling.querySelector('.folder-toggle-btn');
+      if (btn) btn.classList.toggle('collapsed');
+    }
+
+    function toggleServerFolderCheckbox(groupIdx, isChecked) {
+      toggleServerFolderSelectAll(groupIdx, isChecked);
+    }
+
+    function toggleServerFolderSelectAll(groupIdx, selectAll) {
+      const group = serverFoldersData[groupIdx];
+      if (!group) return;
+      group.files.forEach(f => {
+        if (selectAll) selectedServerPaths.add(f.path);
+        else selectedServerPaths.delete(f.path);
+      });
+      const cbs = document.querySelectorAll(`#server-folder-files-${groupIdx} input[type="checkbox"]`);
+      cbs.forEach(cb => cb.checked = selectAll);
+      syncServerFolderCheckboxState(groupIdx);
+      updateServerSelectionSummary();
+    }
+
+    function onServerFileCheck(checkbox, groupIdx) {
+      const p = checkbox.getAttribute('data-path');
+      if (checkbox.checked) selectedServerPaths.add(p);
+      else selectedServerPaths.delete(p);
+      syncServerFolderCheckboxState(groupIdx);
+      updateServerSelectionSummary();
+    }
+
+    function syncServerFolderCheckboxState(groupIdx) {
+      const group = serverFoldersData[groupIdx];
+      const folderCb = document.getElementById(`server-folder-cb-${groupIdx}`);
+      if (!group || !folderCb) return;
+
+      const total = group.files.length;
+      let checkedCount = 0;
+      group.files.forEach(f => {
+        if (selectedServerPaths.has(f.path)) checkedCount++;
+      });
+
+      if (checkedCount === 0) {
+        folderCb.checked = false;
+        folderCb.indeterminate = false;
+      } else if (checkedCount === total) {
+        folderCb.checked = true;
+        folderCb.indeterminate = false;
+      } else {
+        folderCb.checked = false;
+        folderCb.indeterminate = true;
+      }
+    }
+
+    function toggleSelectAllServer(selectAll) {
+      selectedServerPaths.clear();
+      if (selectAll) scannedFiles.forEach(f => selectedServerPaths.add(f.path));
+      document.querySelectorAll('#server-files-container input[type="checkbox"]').forEach(cb => cb.checked = selectAll);
+      serverFoldersData.forEach((_, idx) => syncServerFolderCheckboxState(idx));
+      updateServerSelectionSummary();
+    }
+
+    function updateServerSelectionSummary() {
+      const count = selectedServerPaths.size;
+      let totalSec = 0;
+      scannedFiles.forEach(f => {
+        if (selectedServerPaths.has(f.path)) totalSec += (f.duration || 0);
+      });
+      document.getElementById('server-selected-count').textContent = count;
+      document.getElementById('server-selected-dur').textContent = (totalSec / 60).toFixed(1);
+      document.getElementById('server-submit-btn').disabled = (count === 0);
+    }
+
+    async function submitServerBatchTask() {
+      if (selectedServerPaths.size === 0) return;
+      const btn = document.getElementById('server-submit-btn');
+      btn.disabled = true;
+
+      const payload = {
+        selected_paths: Array.from(selectedServerPaths),
+        force: document.getElementById('scan-force').checked,
+        srt_folder: document.getElementById('scan-srt-folder').checked,
+        concurrency: Math.max(1, parseInt(document.getElementById('server-concurrency').value) || 5),
+        enable_llm: document.getElementById('scan-enable-llm').checked
+      };
+
+      try {
+        const res = await fetch('/api/tasks/server-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || '提交失败');
+        }
+        const data = await res.json();
+        showToast(`任务已成功创建: ${data.task_id}`, 'success');
+        switchPage('tasks');
+        connectTaskEvents(data.task_id);
+      } catch (e) {
+        showToast(e.message, 'error');
+        btn.disabled = false;
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 2. 网页上传逻辑
+    // ------------------------------------------------------------------
+    const dropZone = document.getElementById('drop-zone');
+    ['dragenter', 'dragover'].forEach(name => {
+      dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('border-[#0052d9]', 'bg-[#0052d9]/10'); });
+    });
+    ['dragleave', 'drop'].forEach(name => {
+      dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('border-[#0052d9]', 'bg-[#0052d9]/10'); });
+    });
+    dropZone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) handleFileUploadSelection(files);
+    });
+
+    function handleFileUploadSelection(fileList) {
+      for (let i = 0; i < fileList.length; i++) {
+        uploadQueue.push(fileList[i]);
+      }
+      renderUploadQueue();
+    }
+
+    function removeUploadFile(index) {
+      uploadQueue.splice(index, 1);
+      renderUploadQueue();
+    }
+
+    function renderUploadQueue() {
+      const container = document.getElementById('upload-files-preview');
+      const countBadge = document.getElementById('upload-count-badge');
+      const sizeLabel = document.getElementById('upload-total-size');
+      const submitBtn = document.getElementById('upload-submit-btn');
+
+      countBadge.textContent = `${uploadQueue.length} 个文件`;
+      let totalBytes = uploadQueue.reduce((acc, f) => acc + f.size, 0);
+      sizeLabel.textContent = (totalBytes / (1024 * 1024)).toFixed(1) + ' MB';
+
+      if (uploadQueue.length === 0) {
+        container.innerHTML = `<div class="h-28 flex flex-col items-center justify-center text-slate-600"><span>暂无待上传文件</span></div>`;
+        submitBtn.disabled = true;
+        return;
+      }
+
+      submitBtn.disabled = false;
+      container.innerHTML = '';
+      uploadQueue.forEach((file, idx) => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 rounded bg-[#0a0e17] border border-[#1e2638] text-xs font-mono';
+        item.innerHTML = `
+          <span class="text-slate-300 truncate">${escapeHtml(file.name)}</span>
+          <div class="flex items-center space-x-2 shrink-0">
+            <span class="text-slate-500">${(file.size / (1024 * 1024)).toFixed(1)}MB</span>
+            <button onclick="removeUploadFile(${idx})" class="text-rose-400 hover:text-rose-300 px-1 font-bold">×</button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    async function submitUploadBatchTask() {
+      if (uploadQueue.length === 0) return;
+      const submitBtn = document.getElementById('upload-submit-btn');
+      const submitText = document.getElementById('upload-submit-text');
+      submitBtn.disabled = true;
+      submitText.textContent = '上传传输中...';
+
+      const formData = new FormData();
+      uploadQueue.forEach(f => formData.append('files', f));
+      
+      const lang = document.getElementById('upload-lang').value;
+      if (lang) formData.append('language', lang);
+      
+      const concurrency = Math.max(1, parseInt(document.getElementById('upload-concurrency').value) || 5);
+      formData.append('concurrency', concurrency);
+      formData.append('enable_llm', document.getElementById('upload-enable-llm').checked);
+
+      try {
+        const res = await fetch('/api/tasks/upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || '上传处理失败');
+        }
+        const data = await res.json();
+        showToast(`任务创建成功: ${data.task_id}`, 'success');
+
+        uploadQueue = [];
+        renderUploadQueue();
+        switchPage('tasks');
+        connectTaskEvents(data.task_id);
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitText.textContent = '上传并开始处理';
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 3. 服务器已有 JSON 批量纠错 (扫描目录 -> 勾选 -> 提交)
+    // ------------------------------------------------------------------
+    async function scanJsonServerPath() {
+      const pathInput = document.getElementById('correct-scan-path-input');
+      const path = pathInput.value.trim().replace(/^["']|["']$/g, '');
+      if (!path) {
+        showToast('请输入服务器上 ASR JSON 所在目录的绝对路径', 'error');
+        return;
+      }
+      const recursive = document.getElementById('correct-scan-recursive').checked;
+      const btn = document.getElementById('correct-scan-btn');
+      const btnText = document.getElementById('correct-scan-btn-text');
+      const container = document.getElementById('correct-json-container');
+      const statsBadge = document.getElementById('correct-scan-stats-badge');
+
+      btn.disabled = true;
+      btnText.textContent = '扫描中...';
+      container.innerHTML = `<div class="h-40 flex items-center justify-center text-slate-400 font-mono text-xs">正在索引目录并解析 ASR JSON 元数据...</div>`;
+
+      try {
+        const res = await fetch('/api/scan-json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path, recursive })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || '扫描失败');
+        }
+        const data = await res.json();
+        scannedJsonFiles = data.files || [];
+        jsonFoldersData = data.folders || [];
+        selectedJsonPaths.clear();
+        scannedJsonFiles.forEach(f => selectedJsonPaths.add(f.path));
+        statsBadge.textContent = `${scannedJsonFiles.length} 个 JSON (${data.total_segments} 条字幕)`;
+        document.getElementById('correct-scan-actions').classList.remove('hidden');
+        const selectAllBox = document.getElementById('correct-select-all');
+        if (selectAllBox) selectAllBox.checked = true;
+
+        renderJsonFilesList(jsonFoldersData);
+        updateJsonSelectionSummary();
+        showToast(`已索引 ${scannedJsonFiles.length} 个 ASR JSON 文件`, 'success');
+      } catch (e) {
+        container.innerHTML = `<div class="h-40 flex flex-col items-center justify-center text-red-400 space-y-1 text-xs font-mono"><span>[扫描错误] ${escapeHtml(e.message)}</span></div>`;
+        statsBadge.textContent = '扫描异常';
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = '扫描目录';
+      }
+    }
+
+    function renderJsonFilesList(folders) {
+      const container = document.getElementById('correct-json-container');
+      if (!folders || folders.length === 0) {
+        container.innerHTML = `<div class="h-40 flex items-center justify-center text-slate-500 text-xs">该目录下未找到有效的 ASR JSON 文件</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      folders.forEach((group, groupIdx) => {
+        const folderCard = document.createElement('div');
+        folderCard.className = 'bg-[#121826] border border-[#1e2638] rounded-md p-2.5 space-y-2';
+
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between text-xs pb-2 border-b border-[#1e2638]';
+        header.innerHTML = `
+          <div class="flex items-center space-x-2 truncate">
+            <button type="button" class="folder-toggle-btn text-slate-400 hover:text-slate-200 transition-transform p-0.5" onclick="toggleJsonFolderCollapse(${groupIdx})">
+              <svg class="w-3.5 h-3.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <input type="checkbox" id="json-folder-cb-${groupIdx}" onchange="toggleJsonFolderCheckbox(${groupIdx}, this.checked)" class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+            <svg class="w-4 h-4 text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            <span class="font-semibold text-slate-200 truncate" title="${escapeHtml(group.folder_path)}">${escapeHtml(group.folder_name)}</span>
+            <span class="text-slate-400 font-mono text-[11px]">(${group.count} 个 JSON · ${group.segments_total} 条字幕)</span>
+          </div>
+          <div class="flex items-center space-x-2 text-[11px] font-mono shrink-0">
+            <button type="button" class="text-blue-400 hover:text-blue-300" onclick="toggleJsonFolderSelectAll(${groupIdx}, true)">全选</button>
+            <span class="text-slate-700">|</span>
+            <button type="button" class="text-slate-400 hover:text-slate-300" onclick="toggleJsonFolderSelectAll(${groupIdx}, false)">清空</button>
+          </div>
+        `;
+        folderCard.appendChild(header);
+
+        const filesList = document.createElement('div');
+        filesList.id = `json-folder-files-${groupIdx}`;
+        filesList.className = 'space-y-1 pt-1';
+        group.files.forEach(f => {
+          const isChecked = selectedJsonPaths.has(f.path);
+          const item = document.createElement('label');
+          item.className = 'flex items-center justify-between p-1.5 rounded hover:bg-[#1a2336] cursor-pointer select-none transition-colors';
+          item.innerHTML = `
+            <div class="flex items-center space-x-2 truncate pr-2">
+              <input type="checkbox" data-path="${escapeHtml(f.path)}" data-group="${groupIdx}" ${isChecked ? 'checked' : ''} onchange="onJsonFileCheck(this, ${groupIdx})" class="w-3.5 h-3.5 rounded border-slate-700 text-[#0052d9] focus:ring-0 bg-[#0a0e17]">
+              <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              <span class="text-slate-300 truncate font-mono text-xs" title="${escapeHtml(f.path)}">${escapeHtml(f.name)}</span>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0 text-[11px] text-slate-400 font-mono">
+              ${f.has_srt ? '<span class="text-emerald-400 font-medium px-1 bg-emerald-500/10 border border-emerald-500/20 rounded">已有SRT</span>' : ''}
+              ${f.domain ? `<span class="text-blue-400 px-1 bg-blue-500/10 border border-blue-500/20 rounded">${escapeHtml(f.domain)}</span>` : ''}
+              <span>${f.segments_count} 条</span>
+              <span>${f.size_mb}M</span>
+            </div>
+          `;
+          filesList.appendChild(item);
+        });
+
+        folderCard.appendChild(filesList);
+        container.appendChild(folderCard);
+        syncJsonFolderCheckboxState(groupIdx);
+      });
+    }
+
+    function toggleJsonFolderCollapse(groupIdx) {
+      const list = document.getElementById(`json-folder-files-${groupIdx}`);
+      if (!list) return;
+      list.classList.toggle('hidden');
+      const btn = list.previousElementSibling.querySelector('.folder-toggle-btn');
+      if (btn) btn.classList.toggle('collapsed');
+    }
+
+    function toggleJsonFolderCheckbox(groupIdx, isChecked) {
+      toggleJsonFolderSelectAll(groupIdx, isChecked);
+    }
+
+    function toggleJsonFolderSelectAll(groupIdx, selectAll) {
+      const group = jsonFoldersData[groupIdx];
+      if (!group) return;
+      group.files.forEach(f => {
+        if (selectAll) selectedJsonPaths.add(f.path);
+        else selectedJsonPaths.delete(f.path);
+      });
+      const cbs = document.querySelectorAll(`#json-folder-files-${groupIdx} input[type="checkbox"]`);
+      cbs.forEach(cb => cb.checked = selectAll);
+      syncJsonFolderCheckboxState(groupIdx);
+      updateJsonSelectionSummary();
+    }
+
+    function onJsonFileCheck(checkbox, groupIdx) {
+      const p = checkbox.getAttribute('data-path');
+      if (checkbox.checked) selectedJsonPaths.add(p);
+      else selectedJsonPaths.delete(p);
+      syncJsonFolderCheckboxState(groupIdx);
+      updateJsonSelectionSummary();
+    }
+
+    function syncJsonFolderCheckboxState(groupIdx) {
+      const group = jsonFoldersData[groupIdx];
+      const folderCb = document.getElementById(`json-folder-cb-${groupIdx}`);
+      if (!group || !folderCb) return;
+
+      const total = group.files.length;
+      let checkedCount = 0;
+      group.files.forEach(f => {
+        if (selectedJsonPaths.has(f.path)) checkedCount++;
+      });
+
+      if (checkedCount === 0) {
+        folderCb.checked = false;
+        folderCb.indeterminate = false;
+      } else if (checkedCount === total) {
+        folderCb.checked = true;
+        folderCb.indeterminate = false;
+      } else {
+        folderCb.checked = false;
+        folderCb.indeterminate = true;
+      }
+    }
+
+    function toggleSelectAllJson(selectAll) {
+      selectedJsonPaths.clear();
+      if (selectAll) scannedJsonFiles.forEach(f => selectedJsonPaths.add(f.path));
+      document.querySelectorAll('#correct-json-container input[type="checkbox"]').forEach(cb => cb.checked = selectAll);
+      jsonFoldersData.forEach((_, idx) => syncJsonFolderCheckboxState(idx));
+      updateJsonSelectionSummary();
+    }
+
+    function updateJsonSelectionSummary() {
+      let segments = 0;
+      scannedJsonFiles.forEach(f => {
+        if (selectedJsonPaths.has(f.path)) segments += (f.segments_count || 0);
+      });
+      document.getElementById('correct-selected-count').textContent = selectedJsonPaths.size;
+      document.getElementById('correct-selected-segments').textContent = segments;
+      document.getElementById('correct-submit-btn').disabled = selectedJsonPaths.size === 0;
+    }
+
+    async function submitJsonCorrectionTask() {
+      if (selectedJsonPaths.size === 0) {
+        showToast('请先勾选需要纠错的 JSON 文件', 'error');
+        return;
+      }
+      const btn = document.getElementById('correct-submit-btn');
+      const btnText = document.getElementById('correct-submit-btn-text');
+      btn.disabled = true;
+      btnText.textContent = '正在创建任务...';
+
+      try {
+        const res = await fetch('/api/tasks/json-correction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            selected_paths: Array.from(selectedJsonPaths),
+            batch_size: parseInt(document.getElementById('correct-batch-size').value, 10) || 25,
+            concurrency: parseInt(document.getElementById('correct-concurrency').value, 10) || 20
+          })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || '纠错任务创建失败');
+        }
+        const data = await res.json();
+        showToast(`已创建纠错任务 ${data.task_id}（${data.total_files} 个 JSON / ${data.total_segments} 条字幕）`, 'success');
+        switchPage('tasks');
+        connectTaskEvents(data.task_id);
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = '创建批量纠错任务';
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 4. 上传单个 JSON 独立纠错并提供下载
+    // ------------------------------------------------------------------
+    function handleCorrectFileSelect(files) {
+      if (!files || files.length === 0) return;
+      selectedCorrectFile = files[0];
+      document.getElementById('correct-file-label').textContent = `已选择: ${selectedCorrectFile.name} (${(selectedCorrectFile.size/1024).toFixed(1)} KB)`;
+      document.getElementById('correct-selected-name').textContent = selectedCorrectFile.name;
+      document.getElementById('correct-upload-btn').disabled = false;
+    }
+
+    const correctDropZone = document.getElementById('correct-drop-zone');
+    if (correctDropZone) {
+      ['dragenter', 'dragover'].forEach(name => {
+        correctDropZone.addEventListener(name, (e) => { e.preventDefault(); correctDropZone.classList.add('border-[#0052d9]', 'bg-[#0052d9]/10'); });
+      });
+      ['dragleave', 'drop'].forEach(name => {
+        correctDropZone.addEventListener(name, (e) => { e.preventDefault(); correctDropZone.classList.remove('border-[#0052d9]', 'bg-[#0052d9]/10'); });
+      });
+      correctDropZone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files.length > 0) handleCorrectFileSelect(files);
+      });
+    }
+
+    async function submitUploadJsonCorrection() {
+      if (!selectedCorrectFile) return;
+      const btn = document.getElementById('correct-upload-btn');
+      const btnText = document.getElementById('correct-upload-btn-text');
+      btn.disabled = true;
+      btnText.textContent = '大模型解析纠错中...';
+
+      const formData = new FormData();
+      formData.append('file', selectedCorrectFile);
+
+      try {
+        const res = await fetch('/api/correct-json-upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || '纠错失败');
+        }
+        const data = await res.json();
+        showToast(`智能纠错完成！已生成广播级字幕`, 'success');
+        renderCorrectionResult(data, false);
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = '上传并开始智能纠错';
+      }
+    }
+
+    function renderCorrectionResult(data, isServerFile = true) {
+      const container = document.getElementById('correct-result-container');
+      container.classList.remove('hidden');
+
+      document.getElementById('correct-domain-badge').textContent = data.domain || '通用综合';
+      document.getElementById('correct-topic-text').textContent = data.topic || '领域主题分析';
+      document.getElementById('correct-count-val').textContent = data.segments_count || 0;
+      document.getElementById('correct-jargon-val').textContent = data.jargon_count || (data.jargons ? data.jargons.length : 0);
+      document.getElementById('correct-saved-status').textContent = isServerFile ? '已原地覆盖原文件' : '已生成待下载';
+
+      const linksBox = document.getElementById('correct-download-links');
+      linksBox.innerHTML = '';
+      if (data.download_srt) {
+        linksBox.innerHTML += `<a href="${data.download_srt}" target="_blank" class="px-2.5 py-1 bg-[#0a0e17] hover:bg-[#182032] border border-[#1e2638] text-blue-400 rounded transition-colors">下载 SRT</a>`;
+      }
+      if (data.download_txt) {
+        linksBox.innerHTML += `<a href="${data.download_txt}" target="_blank" class="px-2.5 py-1 bg-[#0a0e17] hover:bg-[#182032] border border-[#1e2638] text-slate-300 rounded transition-colors">下载 TXT</a>`;
+      }
+      if (data.download_json) {
+        linksBox.innerHTML += `<a href="${data.download_json}" target="_blank" class="px-2.5 py-1 bg-[#0a0e17] hover:bg-[#182032] border border-[#1e2638] text-slate-400 rounded transition-colors">下载 JSON</a>`;
+      }
+
+      const previewBox = document.getElementById('correct-preview-content');
+      previewBox.innerHTML = `<div class="text-emerald-400 font-semibold mb-1">纠错完成！已提炼 ${data.jargon_count || 0} 个专业术语，生成 ${data.segments_count || 0} 条高质量广播级字幕。</div>`;
+    }
+
+    // ------------------------------------------------------------------
+    // 5. 任务监控与独立进度条渲染 (SSE 实时连接)
+    // ------------------------------------------------------------------
+    function connectTaskEvents(taskId) {
+      if (!taskId) return;
+      activeTaskId = taskId;
+      localStorage.setItem('active_task_id', taskId);
+
+      document.getElementById('active-task-id').textContent = taskId;
+      document.getElementById('cancel-task-btn').classList.remove('hidden');
+      document.getElementById('download-all-btn').href = `/api/tasks/${taskId}/download-all`;
+
+      if (sseEventSource) sseEventSource.close();
+
+      startTime = Date.now();
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        document.getElementById('active-task-time').textContent = `${m}:${s}`;
+      }, 1000);
+
+      document.getElementById('nav-task-dot').classList.remove('hidden');
+
+      sseEventSource = new EventSource(`/api/tasks/${taskId}/events`);
+      sseEventSource.onmessage = (event) => {
+        try {
+          const taskData = JSON.parse(event.data);
+          renderActiveTaskState(taskData);
+        } catch (err) {
+          console.error(err);
+        }
+      };
+      sseEventSource.onerror = () => {};
+    }
+
+    function renderActiveTaskState(task) {
+      const badge = document.getElementById('active-task-status-badge');
+      const totalFilesEl = document.getElementById('active-task-total-files');
+      const completedFilesEl = document.getElementById('active-task-completed-files');
+      const concurrencyEl = document.getElementById('active-task-concurrency');
+      const cancelBtn = document.getElementById('cancel-task-btn');
+      const downloadAllBtn = document.getElementById('download-all-btn');
+
+      totalFilesEl.textContent = task.total_files || 0;
+      completedFilesEl.textContent = task.completed_files || 0;
+      if (task.params && task.params.concurrency) {
+        concurrencyEl.textContent = `${task.params.concurrency} 路并发`;
+      }
+
+      activeTaskType = task.task_type || 'server_batch';
+      const isJsonTask = activeTaskType === 'json_correction';
+      document.getElementById('file-progress-title').textContent = isJsonTask
+        ? '各 JSON 文件纠错进度明细'
+        : '各视频文件处理进度明细';
+      document.getElementById('file-progress-subtitle').textContent = isJsonTask
+        ? 'Stage 1 领域画像 · Stage 2 逐行锚定纠错 · 原地覆盖 SRT/TXT'
+        : '多路独立抽取与转录 · 工业级平滑断句';
+
+      const status = task.status;
+      if (status === 'running') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-[#0052d9]/20 text-blue-300 border border-[#0052d9]/40';
+        badge.textContent = '运行中';
+        cancelBtn.classList.remove('hidden');
+      } else if (status === 'completed') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        badge.textContent = '已完成';
+        cancelBtn.classList.add('hidden');
+        downloadAllBtn.classList.remove('opacity-40', 'pointer-events-none');
+        finishTaskTracking();
+      } else if (status === 'completed_with_errors') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        badge.textContent = '部分异常完成';
+        cancelBtn.classList.add('hidden');
+        downloadAllBtn.classList.remove('opacity-40', 'pointer-events-none');
+        finishTaskTracking();
+      } else if (status === 'cancelled') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+        badge.textContent = '已终止';
+        cancelBtn.classList.add('hidden');
+        downloadAllBtn.classList.remove('opacity-40', 'pointer-events-none');
+        finishTaskTracking();
+      } else if (status === 'failed') {
+        badge.className = 'px-2 py-0.5 rounded text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40';
+        badge.textContent = '失败';
+        cancelBtn.classList.add('hidden');
+        finishTaskTracking();
+      }
+
+      renderFileProgressCards(task.files, task.task_id);
+    }
+
+    function renderFileProgressCards(files, taskId) {
+      const container = document.getElementById('file-progress-list');
+      if (!files || files.length === 0) {
+        container.innerHTML = `<div class="py-8 text-center text-slate-500 text-xs">无任务条目</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      files.forEach((f, idx) => {
+        const fileIdx = (f.file_index != null) ? f.file_index : idx;
+        const card = document.createElement('div');
+        card.className = 'bg-[#0a0e17] border border-[#1e2638] rounded-md p-3 space-y-2';
+
+        let statusBadge = '<span class="text-slate-500 bg-[#121826] border border-[#1e2638] px-1.5 py-0.5 rounded text-[11px]">队列等待</span>';
+        let barColor = 'bg-[#0052d9]';
+
+        if (f.status === 'extracting') {
+          statusBadge = '<span class="text-amber-300 bg-amber-950/80 border border-amber-800/80 px-1.5 py-0.5 rounded text-[11px]">音频抽取中</span>';
+          barColor = 'bg-amber-500';
+        } else if (f.status === 'transcribing') {
+          statusBadge = '<span class="text-blue-300 bg-blue-950 border border-blue-800 px-1.5 py-0.5 rounded text-[11px]">识别转写中</span>';
+          barColor = 'bg-[#0052d9]';
+        } else if (f.status === 'correcting') {
+          statusBadge = '<span class="text-blue-300 bg-blue-950 border border-blue-800 px-1.5 py-0.5 rounded text-[11px]">大模型纠错中</span>';
+          barColor = 'bg-[#0052d9]';
+        } else if (f.status === 'done') {
+          statusBadge = '<span class="text-emerald-300 bg-emerald-950/80 border border-emerald-800/80 px-1.5 py-0.5 rounded text-[11px] font-medium">已完成</span>';
+          barColor = 'bg-emerald-500';
+        } else if (f.status === 'skipped') {
+          statusBadge = '<span class="text-slate-400 bg-[#121826] border border-[#1e2638] px-1.5 py-0.5 rounded text-[11px]">跳过(已有)</span>';
+          barColor = 'bg-slate-600';
+        } else if (f.status === 'cancelled') {
+          statusBadge = '<span class="text-rose-400 bg-rose-950 border border-rose-800 px-1.5 py-0.5 rounded text-[11px]">已终止</span>';
+          barColor = 'bg-slate-700';
+        } else if (f.status === 'failed') {
+          statusBadge = `<span class="text-rose-400 bg-rose-950 border border-rose-800 px-1.5 py-0.5 rounded text-[11px]">处理失败</span>`;
+          barColor = 'bg-rose-600';
+        }
+
+        const pct = Math.min(100, Math.max(0, f.progress || 0)).toFixed(1);
+        const chunkInfo = (f.total_chunks > 0) ? `切片: ${f.current_chunk || 0}/${f.total_chunks}` : '';
+        const isJsonTask = (activeTaskType === 'json_correction');
+        const sentencesInfo = (f.segments_count > 0)
+          ? (isJsonTask
+              ? (f.status === 'done' ? `纠错 ${f.segments_count} 条字幕` : `共 ${f.segments_count} 条字幕`)
+              : `生成 ${f.segments_count} 条字幕`)
+          : '';
+        const metaInfo = isJsonTask ? '' : `(${(f.duration / 60).toFixed(1)}分)`;
+
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <div class="flex items-center space-x-2 truncate">
+              <span class="text-slate-500 font-mono text-xs">#${fileIdx + 1}</span>
+              <span class="font-semibold text-slate-200 text-xs truncate" title="${escapeHtml(f.path || f.name)}">${escapeHtml(f.name)}</span>
+              <span class="text-slate-500 text-[11px] font-mono">${metaInfo}</span>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+              <div class="flex items-center space-x-3">
+                <span class="text-blue-400 font-bold">${pct}%</span>
+                <span>${chunkInfo}</span>
+                <span class="text-slate-500">${sentencesInfo}</span>
+              </div>
+              ${f.error ? `<span class="text-rose-400 text-[10px] truncate max-w-xs">${escapeHtml(f.error)}</span>` : ''}
+            </div>
+            <div class="w-full bg-[#121826] rounded h-1.5 overflow-hidden border border-[#1e2638]">
+              <div class="h-full transition-all duration-200 ${barColor}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+
+          ${(f.corrections && f.corrections.length > 0) ? `
+            <div class="bg-[#121826] border border-[#1e2638] rounded p-2 space-y-1.5">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-slate-300 font-medium flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                  智能纠错明细（原 → 改）
+                </span>
+                <span class="text-emerald-400 font-mono">已修正 ${f.correction_count || f.corrections.length} 处</span>
+              </div>
+              <div class="space-y-1 max-h-40 overflow-y-auto pr-1">
+                ${f.corrections.slice().reverse().slice(0, 5).map(c => `
+                  <div class="text-[11px] font-mono leading-relaxed border-l-2 border-[#1e2638] pl-2">
+                    <span class="text-slate-500">#${escapeHtml(c.idx)}</span>
+                    <span class="text-rose-400 ml-1">原</span>
+                    <span class="text-slate-400">${escapeHtml(c.from)}</span>
+                    <span class="mx-1 text-slate-600">→</span>
+                    <span class="text-emerald-400">改</span>
+                    <span class="text-slate-200">${escapeHtml(c.to)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : (f.text_preview ? `
+            <div class="bg-[#121826] border border-[#1e2638] rounded p-2 text-[11px] text-slate-300 font-mono truncate">
+              <span class="text-slate-500 mr-1.5">最新字幕:</span>"${escapeHtml(f.text_preview)}"
+            </div>
+          ` : '')}
+
+          ${(f.status === 'done' || f.srt_path) ? `
+            <div class="flex items-center justify-end space-x-2 pt-1 border-t border-[#1e2638] text-[11px] font-mono">
+              <span class="text-slate-500 mr-1">导出文件:</span>
+              <a href="/api/download/${taskId}/${fileIdx}/srt" target="_blank" class="px-2 py-0.5 bg-[#121826] hover:bg-[#1a2336] border border-[#1e2638] text-blue-400 rounded transition-colors">SRT</a>
+              <a href="/api/download/${taskId}/${fileIdx}/txt" target="_blank" class="px-2 py-0.5 bg-[#121826] hover:bg-[#1a2336] border border-[#1e2638] text-slate-300 rounded transition-colors">TXT</a>
+              <a href="/api/download/${taskId}/${fileIdx}/json" target="_blank" class="px-2 py-0.5 bg-[#121826] hover:bg-[#1a2336] border border-[#1e2638] text-slate-400 rounded transition-colors">JSON</a>
+            </div>
+          ` : ''}
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function finishTaskTracking() {
+      if (sseEventSource) {
+        sseEventSource.close();
+        sseEventSource = null;
+      }
+      clearInterval(timerInterval);
+      document.getElementById('nav-task-dot').classList.add('hidden');
+    }
+
+    // ------------------------------------------------------------------
+    // 6. 取消任务
+    // ------------------------------------------------------------------
+    async function cancelCurrentTask() {
+      if (!activeTaskId) return;
+      if (!confirm(`确认强制终止当前任务 [${activeTaskId}] 吗？`)) return;
+
+      const btn = document.getElementById('cancel-task-btn');
+      btn.disabled = true;
+      btn.textContent = '终止中...';
+
+      try {
+        const res = await fetch(`/api/tasks/${activeTaskId}/cancel`, { method: 'POST' });
+        if (!res.ok) throw new Error('取消失败');
+        showToast('任务已成功终止', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '强制终止任务';
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 7. 历史任务与清空缓存
+    // ------------------------------------------------------------------
+    async function refreshHistoryList() {
+      const tbody = document.getElementById('history-table-body');
+      tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center text-slate-500 font-mono">正在检索任务记录...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/tasks');
+        if (!res.ok) throw new Error('获取失败');
+        const tasks = await res.json();
+
+        if (!tasks || tasks.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500 font-mono">暂无历史任务记录</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = '';
+        tasks.forEach(t => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-[#151c2d] transition-colors font-mono';
+
+          let statusBadge = `<span class="text-slate-400">${escapeHtml(t.status)}</span>`;
+          if (t.status === 'completed') statusBadge = '<span class="text-emerald-400">已完成</span>';
+          else if (t.status === 'running') statusBadge = '<span class="text-blue-400 font-bold">运行中</span>';
+          else if (t.status === 'cancelled') statusBadge = '<span class="text-rose-400">已终止</span>';
+          else if (t.status === 'failed') statusBadge = '<span class="text-rose-400">失败</span>';
+
+          const dateStr = t.created_at ? new Date(t.created_at * 1000).toLocaleString() : '--';
+
+          tr.innerHTML = `
+            <td class="px-4 py-2.5 font-bold text-slate-200">${escapeHtml(t.task_id)}</td>
+            <td class="px-4 py-2.5 text-slate-400 font-sans">${
+              t.task_type === 'server_batch' ? '本地扫描'
+                : (t.task_type === 'json_correction' ? 'JSON 纠错' : '网页上传')
+            }</td>
+            <td class="px-4 py-2.5">${statusBadge}</td>
+            <td class="px-4 py-2.5 text-slate-300">${t.total_files} 个 (${(t.total_duration / 60).toFixed(1)} 分)</td>
+            <td class="px-4 py-2.5 text-slate-500 text-[11px]">${dateStr}</td>
+            <td class="px-4 py-2.5 text-right space-x-2">
+              <button onclick="connectTaskEvents('${t.task_id}')" class="px-2 py-1 bg-[#121826] hover:bg-[#1e2638] text-blue-400 border border-[#1e2638] rounded text-xs">监控</button>
+              <a href="/api/tasks/${t.task_id}/download-all" target="_blank" class="px-2 py-1 bg-[#121826] hover:bg-[#1e2638] text-slate-300 border border-[#1e2638] rounded text-xs">打包</a>
+              <button onclick="deleteSingleTask('${t.task_id}')" class="px-2 py-1 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/80 rounded text-xs" title="彻底删除并清理磁盘缓存">删除</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-center text-rose-400 font-mono">${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    async function deleteSingleTask(taskId) {
+      if (!confirm(`确定彻底删除任务 [${taskId}] 并清理其相关磁盘缓存吗？`)) return;
+      try {
+        const res = await fetch(`/api/tasks/${taskId}?delete_files=true`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('删除失败');
+        showToast(`已删除任务 ${taskId} 并释放存储`, 'success');
+        refreshHistoryList();
+        if (activeTaskId === taskId) {
+          activeTaskId = null;
+          localStorage.removeItem('active_task_id');
+          document.getElementById('active-task-id').textContent = '--';
+          document.getElementById('file-progress-list').innerHTML = `<div class="py-12 text-center text-slate-500 text-xs">任务已删除。</div>`;
+        }
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    async function clearAllHistory() {
+      if (!confirm('确定一键清空所有历史任务并彻底释放相关临时文件吗？')) return;
+      try {
+        const res = await fetch('/api/tasks/clear-history?delete_files=true', { method: 'POST' });
+        if (!res.ok) throw new Error('清理失败');
+        const data = await res.json();
+        showToast(data.message || '清理完成', 'success');
+        refreshHistoryList();
+      } catch (e) {
+        showToast(e.message, 'error');
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // 8. 动态大模型状态绑定与系统监控轮询
+    // ------------------------------------------------------------------
+    function updateLlmModelDisplay(isReady, modelName) {
+      if (modelName && modelName.trim()) {
+        currentLlmModelName = modelName.trim();
+      }
+      const dispModel = currentLlmModelName || 'qwen3.5-9b';
+
+      const llmTag = document.getElementById('llm-status-tag');
+      if (llmTag) {
+        if (isReady) {
+          llmTag.innerHTML = `<span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>已就绪 (${escapeHtml(dispModel)})`;
+          llmTag.className = 'text-emerald-400 font-semibold flex items-center font-mono';
+        } else {
+          llmTag.innerHTML = `<span class="inline-block w-1.5 h-1.5 rounded-full bg-slate-500 mr-1.5"></span>未就绪/待启动`;
+          llmTag.className = 'text-slate-400 font-medium flex items-center font-mono';
+        }
+      }
+
+      const bannerBadge = document.getElementById('llm-model-banner-badge');
+      if (bannerBadge) {
+        if (isReady) {
+          bannerBadge.textContent = dispModel;
+          bannerBadge.className = 'px-2 py-0.5 text-xs rounded bg-[#0052d9]/20 text-blue-300 border border-[#0052d9]/40 font-mono';
+        } else {
+          bannerBadge.textContent = '待启动服务';
+          bannerBadge.className = 'px-2 py-0.5 text-xs rounded bg-[#0a0e17] text-slate-400 border border-[#1e2638] font-mono';
+        }
+      }
+
+      const scanLlmText = document.getElementById('scan-enable-llm-text');
+      if (scanLlmText) {
+        scanLlmText.textContent = isReady
+          ? `启用 ${dispModel} 大模型智能纠错`
+          : `启用大模型智能纠错 (服务待启动)`;
+      }
+      const uploadLlmText = document.getElementById('upload-enable-llm-text');
+      if (uploadLlmText) {
+        uploadLlmText.textContent = isReady
+          ? `启用 ${dispModel} 大模型智能纠错`
+          : `启用大模型智能纠错 (服务待启动)`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      function pollSystemStatus() {
+        fetch('/api/status')
+          .then(r => r.json())
+          .then(data => {
+            if (!data) return;
+            if (data.gpu) {
+              const util = Math.round(data.gpu.utilization_gpu || 0);
+              const usedGb = (data.gpu.used_mb / 1024).toFixed(1);
+              const totalGb = Math.round(data.gpu.total_mb / 1024);
+
+              const utilTag = document.getElementById('gpu-util-tag');
+              const memTag = document.getElementById('gpu-mem-tag');
+              if (utilTag) {
+                utilTag.textContent = `${util}%`;
+                utilTag.className = util > 80 ? 'text-amber-400 font-semibold' : (util > 20 ? 'text-blue-400 font-semibold' : 'text-slate-300 font-semibold');
+              }
+              if (memTag) {
+                memTag.textContent = `${usedGb}G / ${totalGb}GB`;
+              }
+            }
+            updateLlmModelDisplay(Boolean(data.llm_ready), data.llm_model);
+          })
+          .catch(() => {});
+      }
+      pollSystemStatus();
+      setInterval(pollSystemStatus, 2500);
+
+      const savedTaskId = localStorage.getItem('active_task_id');
+      if (savedTaskId) {
+        fetch(`/api/tasks/${savedTaskId}`)
+          .then(r => {
+            if (r.ok) connectTaskEvents(savedTaskId);
+            else localStorage.removeItem('active_task_id');
+          })
+          .catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>

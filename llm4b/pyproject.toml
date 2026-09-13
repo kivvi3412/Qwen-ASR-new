@@ -1,0 +1,12 @@
+[project]
+name = "qwen-asr-llm-corrector"
+version = "0.1.0"
+description = "Qwen3.5-4B 字幕纠错大模型 (vLLM OpenAI 服务, 端口 8002)"
+requires-python = ">=3.10"
+dependencies = [
+    # Qwen3.5 系列 (Qwen3_5ForCausalLM) 需要 vLLM >= 0.27.1，这里固定到当前最新稳定版。
+    "vllm==0.29.0",
+]
+
+[dependency-groups]
+dev = []

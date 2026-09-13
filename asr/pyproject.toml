@@ -1,0 +1,22 @@
+[project]
+name = "qwen-asr-subtitle-studio"
+version = "0.1.0"
+description = "Qwen3-ASR 高速字幕生成服务 (ASR 环境: vLLM + ForcedAligner + Web 控制台)"
+requires-python = ">=3.10"
+dependencies = [
+    # qwen-asr 的 [vllm] extra 会把 vLLM 锁在 0.14.0、transformers 锁在 4.57.6，
+    # 这两个版本组合是 ASR 主模型与 ForcedAligner 的官方适配版本，请勿随意升级。
+    "qwen-asr[vllm]>=0.0.6",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "python-multipart>=0.0.9",
+    "soundfile>=0.12.1",
+    "numpy>=1.26.0",
+    "torch>=2.4.0",
+    "jieba>=0.42.1",
+    # 纠错守门员用它做「发音相似度」校验（只放行同音/近音修正）
+    "pypinyin>=0.51",
+]
+
+[dependency-groups]
+dev = []
